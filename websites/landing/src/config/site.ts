@@ -15,8 +15,9 @@ export const siteConfig = {
   description:
     "MMK School ERP is school management software for Indian schools. It connects administration, academics, teachers, students, and parents in one platform.",
   logo: {
-    symbol: "/logo/symbol.svg",
-    wordmark: "MMK School ERP",
+    symbol: "/logo/mmk-wordmark.svg",
+    wordmark: "/logo/mmk-wordmark.svg",
+    wordmarkPng: "/logo/mmk-wordmark.png",
   },
   social: {
     youtube: "https://www.youtube.com/channel/UCglZwT9PYeAPTKg6rUhQiFA",

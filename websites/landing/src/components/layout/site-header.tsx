@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useState } from "react"
 import { MenuIcon } from "lucide-react"
-import { MmkLogo } from "@/components/brand/mmk-logo"
+import { MmkLogoStacked} from "@/components/brand/mmk-logo"
 import { buttonVariants } from "@/components/ui/button"
 import {
   NavigationMenu,
@@ -23,9 +23,9 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-border bg-background">
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
         <Link aria-label="MMK School ERP home" href="/">
-          <MmkLogo />
+          <MmkLogoStacked priority />
         </Link>
-        <nav aria-label="Primary" className="ml-auto hidden xl:block">
+        <nav aria-label="Primary" className="ml-auto hidden min-w-0 xl:block">
           <NavigationMenu>
             <NavigationMenuList>
               {mainNavigation.map((item) =>
@@ -61,7 +61,10 @@ export function SiteHeader() {
         </Link>
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger
-            className={cn(buttonVariants({ variant: "outline", size: "icon" }), "xl:hidden")}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "icon" }),
+              "ml-auto sm:ml-0 xl:hidden"
+            )}
             aria-label="Open menu"
           >
             <MenuIcon />

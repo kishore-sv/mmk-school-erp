@@ -26,7 +26,6 @@ export function ProductPreview() {
       <CardHeader className="border-b">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="text-base">Product interface preview</CardTitle>
-          <Badge variant="secondary">Sample layout</Badge>
         </div>
         <p className="text-sm text-muted-foreground">
           A composed example of how roles see the same school. It is not a live customer deployment.

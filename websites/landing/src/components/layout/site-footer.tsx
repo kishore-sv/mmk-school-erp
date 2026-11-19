@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { IconBrandYoutube, IconMail, IconPhone, IconWorld } from "@tabler/icons-react"
-import { MmkLogo } from "@/components/brand/mmk-logo"
+import { MmkLogoStacked } from "@/components/brand/mmk-logo"
 import { CopyrightLine } from "@/components/layout/copyright-line"
 import { footerColumns } from "@/config/footer"
 import { siteConfig, telHref } from "@/config/site"
@@ -35,7 +35,7 @@ export function SiteFooter() {
     <footer className="mt-auto border-t border-border bg-card">
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 gap-y-10 px-4 py-14 sm:px-6 lg:grid-cols-6 lg:gap-10">
         <div className="col-span-2 lg:col-span-2">
-          <MmkLogo />
+          <MmkLogoStacked />
           <p className="mt-4 max-w-sm text-sm leading-6 text-muted-foreground">{siteConfig.description}</p>
         </div>
         {footerColumns.map((column) => (

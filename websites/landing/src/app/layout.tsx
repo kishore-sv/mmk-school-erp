@@ -2,8 +2,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { SiteHeader } from "@/components/layout/site-header"
-import { seoDefaults } from "@/config/seo"
-import { siteConfig } from "@/config/site"
+import { rootLayoutMetadata } from "@/lib/seo/create-metadata"
 import { JsonLd, organizationJsonLd, softwareJsonLd, websiteJsonLd } from "@/lib/seo/schema"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
@@ -18,13 +17,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 })
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteConfig.url),
-  title: { default: seoDefaults.title, template: `%s | ${siteConfig.name}` },
-  description: seoDefaults.description,
-  applicationName: siteConfig.name,
-  alternates: { canonical: siteConfig.url },
-}
+export const metadata: Metadata = rootLayoutMetadata()
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
