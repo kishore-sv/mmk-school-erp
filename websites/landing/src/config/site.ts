@@ -18,11 +18,14 @@ export const siteConfig = {
     symbol: "/logo/mmk-wordmark.svg",
     wordmark: "/logo/mmk-wordmark.svg",
     wordmarkPng: "/logo/mmk-wordmark.png",
+    appIcon: "/app-logo.png",
   },
   social: {
     youtube: "https://www.youtube.com/channel/UCglZwT9PYeAPTKg6rUhQiFA",
     blog: "https://blogs.mmkerp.tech",
   },
+  playstore: "https://play.google.com/store/apps/details?id=com.uolo.notes&hl=en",
+  appstore: "https://apps.apple.com/in/app/uolo-learn/id1627069461",
 } as const
 
 export function copyrightLine(year: number) {
