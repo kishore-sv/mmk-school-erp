@@ -2,6 +2,7 @@ import Link from "next/link"
 import { PageContainer, PageHero } from "@/components/marketing/page-shell"
 import { integrations } from "@/data/integrations"
 import { createMetadata } from "@/lib/seo/create-metadata"
+import { Button } from "@/components/ui/button"
 
 export const metadata = createMetadata({
   title: "Integrations",
@@ -15,7 +16,7 @@ export default function Page() {
       <PageHero eyebrow="Integrations" title="Channels you can configure" description="These are optional connections around the product. A category on this list is not a promise that a named provider is already live." />
       <PageContainer className="grid gap-4 py-12 md:grid-cols-2">
         {integrations.map((item) => (
-          <Link className="border border-border p-5" href={`/integrations/${item.slug}`} key={item.slug}>
+          <Link className="border border-border p-5 hover:scale-101 hover:shadow-md hover:rounded-md hover:ring ring-foreground/50 transition-all duration-300 ease-in-out" href={`/integrations/${item.slug}`} key={item.slug}>
             <h2 className="text-lg font-semibold">{item.title}</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.definition}</p>
           </Link>

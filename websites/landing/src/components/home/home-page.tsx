@@ -73,8 +73,8 @@ export function HomePage() {
           </div>
           <ul className="mt-8 columns-1 gap-x-8 sm:columns-2 lg:columns-3">
             {modules.map((module) => (
-              <li className="mb-3 break-inside-avoid" key={module.slug}>
-                <Link className="text-sm font-medium underline-offset-4 hover:underline" href={`/modules/${module.slug}`}>
+              <li className="mb-3 break-inside-avoid hover:scale-101 transition-all duration-300 ease-in-out" key={module.slug}>
+                <Link className="text-sm hover:text-shadow-[1px_1px_0_rgba(0,0,0,0.1)] font-medium underline-offset-4 hover:underline trasnition-all duration-300 ease-in-out" href={`/modules/${module.slug}`}>
                   {module.title}
                 </Link>
               </li>
@@ -115,7 +115,7 @@ export function HomePage() {
           <h2 className="text-2xl font-semibold">Key capabilities</h2>
           <ul className="grid gap-3 text-sm sm:grid-cols-2">
             {["Admissions to enrollment", "Attendance with corrections", "Timetables with clash checks", "Exams and report cards", "School fee records", "Role-based access"].map((item) => (
-              <li className="border border-border px-3 py-3" key={item}>{item}</li>
+              <li className="border border-border px-3 py-3 hover:scale-103 hover:shadow-md hover:rounded-md hover:ring ring-foreground/50 transition-all duration-300 ease-in-out" key={item}>{item}</li>
             ))}
           </ul>
         </PageContainer>
@@ -161,7 +161,7 @@ export function HomePage() {
               Teachers, students, and parents use the same app. The navigation changes with the role. This site does not claim a store listing.
             </p>
           </div>
-          <Link className={buttonVariants({ variant: "outline" })} href="/mobile-app">Mobile app</Link>
+          <Link className={`${buttonVariants({ variant: "outline" })} hover:shadow-lg hover:scale-101 transition-all duration-300 ease-in-out`} href="/mobile-app">Mobile app</Link>
         </PageContainer>
       </section>
 

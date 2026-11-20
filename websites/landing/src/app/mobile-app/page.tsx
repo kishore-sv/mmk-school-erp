@@ -53,13 +53,13 @@ export default function Page() {
           <AppStoreLink className="justify-self-center md:justify-self-end">
             <figure>
               <Image
-                src={siteConfig.logo.appIcon}
+                src={siteConfig.logo.squareLogo}
                 alt="MMK School mobile app"
                 width={512}
                 height={512}
                 priority
                 draggable={false}
-                className="w-full max-w-[14rem] select-none cursor-pointer rounded-3xl shadow-xl ring-2 ring-foreground/10 ring-offset-1 transition-transform ease-in-out hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full max-w-[14rem] select-none cursor-pointer rounded-3xl shadow-xl hover:shadow-2xl ring-2 ring-foreground/10 ring-offset-1 transition-all duration-200 ease-linear hover:scale-[1.02] active:scale-[0.98]"
               />
             </figure>
           </AppStoreLink>

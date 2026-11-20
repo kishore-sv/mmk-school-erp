@@ -23,14 +23,14 @@ export function ModuleDirectory({ modules }: { modules: ModuleRecord[] }) {
       <p className="mt-3 text-sm text-muted-foreground">{filtered.length} modules</p>
       <ul className="mt-6 grid gap-4 md:grid-cols-2">
         {filtered.map((module, index) => (
-          <li className="border border-border p-5" key={module.slug}>
+          <li className="border border-border p-5 hover:scale-101 hover:shadow-md hover:rounded-md hover:ring ring-foreground/50 cursor-pointer transition-all duration-300 ease-in-out" key={module.slug}>
+            <Link href={`/modules/${module.slug}`}>
             <p className="font-mono text-xs text-muted-foreground">{String(index + 1).padStart(2, "0")}</p>
             <h2 className="mt-2 text-lg font-semibold">
-              <Link className="underline-offset-4 hover:underline" href={`/modules/${module.slug}`}>
                 {module.title}
-              </Link>
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">{module.definition}</p>
+              </Link>
           </li>
         ))}
       </ul>

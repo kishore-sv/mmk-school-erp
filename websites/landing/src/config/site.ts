@@ -18,6 +18,7 @@ export const siteConfig = {
     symbol: "/logo/mmk-wordmark.svg",
     wordmark: "/logo/mmk-wordmark.svg",
     wordmarkPng: "/logo/mmk-wordmark.png",
+    squareLogo:"/app-square-logo.png",
     appIcon: "/app-logo.png",
   },
   social: {
