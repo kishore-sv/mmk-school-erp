@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
+import { LinkPreview } from "@/components/ui/link-preview"
 import { PageContainer } from "@/components/marketing/page-shell"
 import { ConnectedSchoolEcosystemCard } from "@/components/home/connected-school-ecosystem-card"
 import { ProductOverviewCards } from "@/components/home/product-overview-cards"
@@ -161,7 +162,16 @@ export function HomePage() {
               Teachers, students, and parents use the same app. The navigation changes with the role. This site does not claim a store listing.
             </p>
           </div>
-          <Link className={`${buttonVariants({ variant: "outline" })} hover:shadow-lg hover:scale-101 transition-all duration-300 ease-in-out`} href="/mobile-app">Mobile app</Link>
+          <LinkPreview
+            url="/mobile-app"
+            isStatic
+            imageSrc="/app-square-logo.png"
+            width={200}
+            height={200}
+            className={`${buttonVariants({ variant: "outline" })} hover:shadow-lg hover:scale-101 transition-all duration-300 ease-in-out`}
+          >
+            Mobile app
+          </LinkPreview>
         </PageContainer>
       </section>
 
@@ -180,7 +190,7 @@ export function HomePage() {
           <h2 className="text-2xl font-semibold">Implementation</h2>
           <ol className="mt-6 grid gap-4 md:grid-cols-3">
             {["Share school details and the student strength used for the quotation.", "MMK opens the school account and confirms the modules in scope.", "Your team completes setup, imports the year, and invites users."].map((step, index) => (
-              <li className="bg-muted/40 p-4 text-sm leading-6" key={step}>
+              <li className="bg-muted/40 p-4 text-sm leading-6 hover:scale-101 hover:shadow-md hover:rounded-md hover:ring ring-foreground/20 transition-all duration-300 ease-in-out" key={step}>
                 <span className="font-medium">Step {index + 1}. </span>
                 {step}
               </li>
