@@ -1,5 +1,7 @@
+import Link from "next/link"
 import { CtaBand, PageContainer, PageHero } from "@/components/marketing/page-shell"
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
+import { siteConfig } from "@/config/site"
 import { createMetadata } from "@/lib/seo/create-metadata"
 
 export const metadata = createMetadata({
@@ -19,7 +21,20 @@ const items = [
 export default function Page() {
   return (
     <>
-      <PageHero title="A public admissions page for your school" description="Families apply to your school. Your team reviews the same application inside Admission Management." />
+      <PageHero
+        title="A public admissions page for your school"
+        description="Families apply to your school. Your team reviews the same application inside Admission Management."
+        actions={
+          <Link
+            className={buttonVariants()}
+            href={siteConfig.admissionsDemoUrl}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            See Demo admission website
+          </Link>
+        }
+      />
       <PageContainer className="grid gap-4 py-12 md:grid-cols-2">
         {items.map(([title, copy]) => (
           <section className="border border-border p-5 hover:scale-101 hover:shadow-md hover:rounded-md hover:ring ring-foreground/50 transition-all duration-300 ease-in-out" key={title}>

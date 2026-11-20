@@ -27,6 +27,7 @@ export const siteConfig = {
   },
   playstore: "https://play.google.com/store/apps/details?id=com.uolo.notes&hl=en",
   appstore: "https://apps.apple.com/in/app/uolo-learn/id1627069461",
+  admissionsDemoUrl: "https://demo.admissions.mmkerp.tech",
 } as const
 
 export function copyrightLine(year: number) {

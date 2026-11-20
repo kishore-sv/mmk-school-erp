@@ -42,6 +42,7 @@ export const footerColumns = [
       { label: "Product videos", href: "/resources" },
       { label: "Solutions", href: "/solutions" },
       { label: "Blog", href: siteConfig.blogUrl, external: true },
+      {label:"Admissions demo", href:siteConfig.admissionsDemoUrl, external : true}
     ],
   },
 ] as const
