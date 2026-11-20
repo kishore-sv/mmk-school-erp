@@ -1,0 +1,18 @@
+{
+  "name": "mmk-school-erp",
+  "private": true,
+  "packageManager": "bun@1.3.3",
+  "scripts": {
+    "infra:up": "sh scripts/ensure-data-dirs.sh && docker compose up -d",
+    "infra:down": "docker compose down",
+    "infra:logs": "docker compose logs -f",
+    "dev:landing": "bun --cwd websites/landing run dev -- --port 3000",
+    "dev:platform-admin": "bun --cwd platform-admin dev",
+    "dev:school-admin": "bun --cwd school-admin dev",
+    "dev:portal": "bun --cwd portal dev",
+    "dev:admission": "bun --cwd admission-portal dev",
+    "dev:server": "bun --cwd server dev",
+    "dev:worker": "bun --cwd worker dev",
+    "dev:mobile": "bun --cwd mobile start"
+  }
+}

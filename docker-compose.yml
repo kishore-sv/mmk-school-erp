@@ -1,0 +1,64 @@
+# Local development infrastructure only.
+# Default credentials are for a developer machine. They are not production secrets.
+# MinIO here is not the production storage service.
+#
+# Official minio/minio images were removed from Docker Hub. A pull of
+# quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z produced no layer progress.
+# This machine already had minio/minio:latest with image id 14cea493d9a3,
+# which public reports identify as that same frozen release. It is tagged
+# locally as RELEASE.2025-09-07T16-13-09Z and pull_policy is if_not_present.
+# The image is not a security-supported release. Do not use it in production.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: schoolerp_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: schoolerp
+      POSTGRES_USER: schoolerp
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-schoolerp_dev_password}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - ${HOME}/DockerData/schoolerp/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U schoolerp -d schoolerp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: schoolerp_redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - ${HOME}/DockerData/schoolerp/redis:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    pull_policy: if_not_present
+    container_name: schoolerp_minio
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-change-this-local-secret}
+    command: server /data --console-address ":9001"
+    volumes:
+      - ${HOME}/DockerData/schoolerp/minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

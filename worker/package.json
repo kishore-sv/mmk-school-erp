@@ -1,0 +1,22 @@
+{
+  "name": "worker",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.3.3",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.5",
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.2"
+  }
+}
