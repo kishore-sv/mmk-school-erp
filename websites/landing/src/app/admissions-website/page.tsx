@@ -3,6 +3,7 @@ import { CtaBand, PageContainer, PageHero } from "@/components/marketing/page-sh
 import { buttonVariants } from "@/components/ui/button"
 import { siteConfig } from "@/config/site"
 import { createMetadata } from "@/lib/seo/create-metadata"
+import { ArrowRightIcon } from "lucide-react"
 
 export const metadata = createMetadata({
   title: "Admissions website",
@@ -26,12 +27,13 @@ export default function Page() {
         description="Families apply to your school. Your team reviews the same application inside Admission Management."
         actions={
           <Link
-            className={buttonVariants()}
+            className={`${buttonVariants()} group flex items-center gap-2 hover:scale-101 hover:shadow-md transition-all duration-300 ease-in-out`}
             href={siteConfig.admissionsDemoUrl}
             rel="noopener noreferrer"
             target="_blank"
           >
             See Demo admission website
+            <ArrowRightIcon className="w-4 h-4 group-hover:rotate-[-30deg] group-hover:scale-110 transition-all duration-300 ease-in-out" />
           </Link>
         }
       />
