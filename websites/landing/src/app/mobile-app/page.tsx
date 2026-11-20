@@ -33,7 +33,8 @@ export default function Page() {
                 width={512}
                 height={512}
                 priority
-                className="w-full max-w-[14rem] cursor-pointer rounded-3xl shadow-xl ring-2 ring-foreground/10 ring-offset-1 transition-transform ease-in-out hover:scale-[1.02] active:scale-[0.98]"
+                draggable={false}
+                className="w-full max-w-[14rem] select-none cursor-pointer rounded-3xl shadow-xl ring-2 ring-foreground/10 ring-offset-1 transition-transform ease-in-out hover:scale-[1.02] active:scale-[0.98]"
               />
             </figure>
           </AppStoreLink>
