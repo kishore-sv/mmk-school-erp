@@ -8,7 +8,7 @@ export const siteConfig = {
   email: "mmkerp@gmail.com",
   phones: ["+91 78993 04607", "+91 861 881 3147"] as const,
   blogUrl: "https://blogs.mmkerp.tech",
-  youtubeUrl: "https://www.youtube.com/channel/UCglZwT9PYeAPTKg6rUhQiFA",
+  youtubeUrl: "https://www.youtube.com/@mmktechsolutions",
   locale: "en-IN",
   country: "India",
   language: "English",
@@ -21,7 +21,7 @@ export const siteConfig = {
     appIcon: "/app-logo.png",
   },
   social: {
-    youtube: "https://www.youtube.com/channel/UCglZwT9PYeAPTKg6rUhQiFA",
+    youtube: "https://www.youtube.com/@mmktechsolutions",
     blog: "https://blogs.mmkerp.tech",
   },
   playstore: "https://play.google.com/store/apps/details?id=com.uolo.notes&hl=en",

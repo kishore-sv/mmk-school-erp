@@ -82,6 +82,21 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+@layer utilities {
+  .mask-radial-faded {
+    mask-image: radial-gradient(
+      ellipse 72% 800% at 50% 50%,
+      #000 42%,
+      transparent 72%
+    );
+    -webkit-mask-image: radial-gradient(
+      ellipse 72% 800% at 50% 50%,
+      #000 42%,
+      transparent 72%
+    );
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
