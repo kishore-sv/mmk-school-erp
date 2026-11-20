@@ -18,7 +18,7 @@ export function RolePortalCards() {
         <Link
           key={href}
           href={href}
-          className="group relative isolate overflow-hidden border border-border bg-background p-4 transition-all ease-in-out rounded-md hover:border-foreground/25 hover:scale-105"
+          className="group relative isolate overflow-hidden border border-border bg-background p-4 transition-all ease-in-out rounded-md hover:border-foreground/25 hover:scale-101"
         >
           <InteractiveGridPattern
             className={cn(
@@ -29,7 +29,7 @@ export function RolePortalCards() {
             squaresClassName="stroke-gray-400/25"
           />
           <div className="relative z-10">
-            <h3 className="font-medium group-hover:text-lg transition-all ease-in-out text-foreground">{title}</h3>
+            <h3 className="font-medium group-hover:text-lg group-font-semibold transition-all ease-in-out text-foreground">{title}</h3>
             <p className="mt-2 text-sm leading-6 text-foreground/85">{copy}</p>
           </div>
         </Link>
