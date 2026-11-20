@@ -58,7 +58,6 @@ export function LoginForm() {
             type={visible ? "text" : "password"}
             autoComplete="current-password"
             required
-            minLength={12}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             className="pr-10"
