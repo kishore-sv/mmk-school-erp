@@ -1,18 +1,14 @@
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
 import { PageContainer } from "@/components/marketing/page-shell"
+import { ConnectedSchoolEcosystemCard } from "@/components/home/connected-school-ecosystem-card"
+import { ProductOverviewCards } from "@/components/home/product-overview-cards"
+import { RolePortalCards } from "@/components/home/role-portal-cards"
 import { ProductPreview } from "@/components/marketing/product-preview"
 import { FaqList } from "@/components/marketing/faq-list"
 import { modules } from "@/data/modules"
 import { homeFaqs } from "@/data/faqs"
 import { siteConfig } from "@/config/site"
-
-const portals = [
-  ["School admin", "/platform/school-admin-portal", "Setup, people, fees, and permissions for the whole school."],
-  ["Teacher", "/platform/teacher-portal", "Timetable, attendance, classwork, and marks for assigned classes."],
-  ["Student", "/platform/student-portal", "The learner's own timetable, work, and published results."],
-  ["Parent", "/platform/parent-portal", "One account, with a switch between linked children."],
-] as const
 
 export function HomePage() {
   return (
@@ -51,31 +47,13 @@ export function HomePage() {
           <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
             The product is a set of school modules plus role-based portals. Platform administration, used by MMK to onboard a school, is separate from the school admin portal.
           </p>
-          <div className="mt-8 grid gap-px border border-border bg-border sm:grid-cols-3">
-            {["School operations", "Classroom work", "Family access"].map((item) => (
-              <div className="bg-background p-5" key={item}>
-                <h3 className="font-medium">{item}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {item === "School operations"
-                    ? "Setup, admissions, students, staff, fees, transport, and reports."
-                    : item === "Classroom work"
-                      ? "Timetable, attendance, diary, homework, and examinations."
-                      : "Parent and student portals, plus one mobile app."}
-                </p>
-              </div>
-            ))}
-          </div>
+          <ProductOverviewCards />
         </PageContainer>
       </section>
 
       <section className="border-b border-border">
         <PageContainer className="grid gap-6 py-16 md:grid-cols-2 md:py-24">
-          <div className="border border-border p-6">
-            <h2 className="text-xl font-semibold">Connected school ecosystem</h2>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              An admission becomes a student. That student is placed in a section, appears on a timetable, is marked in attendance, and is linked to guardians. Fees and exams use the same person, not a second spreadsheet.
-            </p>
-          </div>
+          <ConnectedSchoolEcosystemCard />
           <ol className="flex flex-col justify-center gap-4 text-sm">
             {["Application approved", "Student enrolled", "Class and guardians linked", "Daily academic work", "Reports for the people allowed to see them"].map((step, index) => (
               <li className="flex gap-3" key={step}>
@@ -108,14 +86,7 @@ export function HomePage() {
       <section className="border-b border-border">
         <PageContainer className="py-16 md:py-24">
           <h2 className="text-2xl font-semibold">Role-specific portals</h2>
-          <div className="mt-8 grid gap-4 md:grid-cols-4">
-            {portals.map(([title, href, copy]) => (
-              <Link className="border border-border p-4 hover:bg-muted/40" href={href} key={href}>
-                <h3 className="font-medium">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{copy}</p>
-              </Link>
-            ))}
-          </div>
+          <RolePortalCards />
         </PageContainer>
       </section>
 

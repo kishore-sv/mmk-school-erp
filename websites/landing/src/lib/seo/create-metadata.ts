@@ -101,7 +101,8 @@ export function rootLayoutMetadata(): Metadata {
       images: [ogImage],
     },
     icons: {
-      icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+      icon: [{ url: siteConfig.logo.appIcon, type: "image/png" }],
+      apple: [{ url: siteConfig.logo.appIcon, type: "image/png" }],
     },
     manifest: "/manifest.webmanifest",
   }

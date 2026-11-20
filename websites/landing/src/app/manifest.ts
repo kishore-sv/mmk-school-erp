@@ -16,10 +16,16 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["education", "business"],
     icons: [
       {
-        src: "/icon.svg",
-        type: "image/svg+xml",
-        sizes: "any",
+        src: siteConfig.logo.appIcon,
+        type: "image/png",
+        sizes: "512x512",
         purpose: "any",
+      },
+      {
+        src: siteConfig.logo.appIcon,
+        type: "image/png",
+        sizes: "512x512",
+        purpose: "maskable",
       },
     ],
   }

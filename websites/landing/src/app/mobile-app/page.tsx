@@ -1,8 +1,32 @@
 import Image from "next/image"
 import { AppStoreLink } from "@/components/marketing/app-store-link"
+import { MobileStoreBadges } from "@/components/marketing/mobile-store-badges"
 import { CtaBand, PageContainer } from "@/components/marketing/page-shell"
+import { Iphone } from "@/components/ui/iphone"
 import { siteConfig } from "@/config/site"
 import { createMetadata } from "@/lib/seo/create-metadata"
+
+const roleCards = [
+  {
+    title: "Teacher",
+    copy: "Timetable, classes, attendance, diary, homework, and marks entry for assigned work.",
+    previewLabel: "Teacher",
+  },
+  {
+    title: "Student",
+    copy: "Profile, timetable, attendance, classwork, exams, and published results.",
+    previewLabel: "Student",
+  },
+  {
+    title: "Parent",
+    copy: "Switch between linked children, then open attendance, diary, fees, and notices for that child.",
+    previewLabel: "Parent",
+  },
+] as const
+
+function rolePreviewSrc(label: string) {
+  return `https://placehold.co/900x1600/e5e5e5/2563eb?text=${encodeURIComponent(label)}`
+}
 
 export const metadata = createMetadata({
   title: "Mobile app",
@@ -22,8 +46,9 @@ export default function Page() {
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
               Teachers, students, and parents use the same mobile application. After sign-in, the home screen matches
-              that role. This page does not claim an App Store or Play Store listing.
+              that role. Download the app from Google Play or the App Store.
             </p>
+            <MobileStoreBadges />
           </div>
           <AppStoreLink className="justify-self-center md:justify-self-end">
             <figure>
@@ -40,15 +65,25 @@ export default function Page() {
           </AppStoreLink>
         </PageContainer>
       </header>
-      <PageContainer className="grid gap-4 py-12 md:grid-cols-3">
-        {[
-          ["Teacher", "Timetable, classes, attendance, diary, homework, and marks entry for assigned work."],
-          ["Student", "Profile, timetable, attendance, classwork, exams, and published results."],
-          ["Parent", "Switch between linked children, then open attendance, diary, fees, and notices for that child."],
-        ].map(([title, copy]) => (
-          <section className="border border-border p-5" key={title}>
-            <h2 className="font-semibold">{title}</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">{copy}</p>
+      <PageContainer className="grid gap-6 py-12 sm:gap-8 md:grid-cols-3">
+        {roleCards.map(({ title, copy, previewLabel }) => (
+          <section
+            className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm"
+            key={title}
+          >
+            <div className="border-b border-border/80 p-5 sm:p-6">
+              <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{copy}</p>
+            </div>
+            <div className="flex flex-1 items-end justify-center bg-muted/30 px-4 pb-5 pt-8 sm:px-6 sm:pb-6 sm:pt-10">
+              <div className="w-full max-w-[11rem] sm:max-w-[12.25rem] ">
+                <Iphone
+                  src={rolePreviewSrc(previewLabel)}
+                  className="mx-auto drop-shadow-md"
+                  aria-label={`${title} app preview placeholder`}
+                />
+              </div>
+            </div>
           </section>
         ))}
       </PageContainer>
@@ -62,7 +97,7 @@ export default function Page() {
       </PageContainer>
       <CtaBand
         title="Ask for a mobile walkthrough"
-        description="We will show the role you care about. We will not show a store badge that does not exist."
+        description="Book a demo and we can walk through the app for the role you care about—teacher, student, or parent."
       />
     </>
   )
