@@ -8,8 +8,10 @@ import { contactMethods, studentCountRanges } from "@/config/contact"
 import { modules } from "@/data/modules"
 import { StateCombobox } from "@/components/forms/state-combobox"
 import {
+  ENQUIRY_MESSAGE_MAX,
   EnquiryResultAlerts,
   EnquirySuccessCard,
+  MessageCharacterCount,
   RequiredMark,
 } from "@/components/forms/enquiry-form-shared"
 import { Button } from "@/components/ui/button"
@@ -335,8 +337,11 @@ export function DemoEnquiryForm() {
                 placeholder="Tell us about your school, the challenges you want to solve, and what you hope to see in the demonstration."
                 aria-invalid={!!fieldError("message")}
                 disabled={submitting}
+                maxLength={ENQUIRY_MESSAGE_MAX}
+                aria-describedby="demo-message-length"
                 {...form.register("message")}
               />
+              <MessageCharacterCount id="demo-message-length" length={form.watch("message")?.length ?? 0} />
               <FieldError>{fieldError("message")}</FieldError>
             </Field>
 

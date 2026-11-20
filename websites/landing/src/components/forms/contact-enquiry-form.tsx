@@ -7,8 +7,10 @@ import { toast } from "sonner"
 import { contactEnquiryTypes, studentCountRanges } from "@/config/contact"
 import { StateCombobox } from "@/components/forms/state-combobox"
 import {
+  ENQUIRY_MESSAGE_MAX,
   EnquiryResultAlerts,
   EnquirySuccessCard,
+  MessageCharacterCount,
   RequiredMark,
 } from "@/components/forms/enquiry-form-shared"
 import { Button } from "@/components/ui/button"
@@ -274,8 +276,11 @@ export function ContactEnquiryForm() {
                 placeholder="Tell us about your school and what you would like to know about MMK School ERP."
                 aria-invalid={!!fieldError("message")}
                 disabled={submitting}
+                maxLength={ENQUIRY_MESSAGE_MAX}
+                aria-describedby="message-length"
                 {...form.register("message")}
               />
+              <MessageCharacterCount id="message-length" length={form.watch("message")?.length ?? 0} />
               <FieldError>{fieldError("message")}</FieldError>
             </Field>
 

@@ -33,7 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />
-        <Toaster />
+        <Toaster closeButton={true} richColors position="top-right"/>
       </body>
     </html>
   )

@@ -1,5 +1,3 @@
-"use server"
-
 import { siteConfig } from "@/config/site"
 import type { EnquiryPayload } from "@/lib/forms/schemas"
 
@@ -11,27 +9,43 @@ export type EnquiryResult =
 const visitorErrorMessage =
   "We could not send your enquiry right now. Please try again or contact us using the email and phone numbers on this page."
 
-function providerRejectedMessage(message?: string) {
-  if (!message) return visitorErrorMessage
-  if (/html files|web server|formsubmit/i.test(message)) return visitorErrorMessage
-  return visitorErrorMessage
+const WEB3FORMS_ENDPOINT = "https://api.web3forms.com/submit"
+
+/** Web3Forms free tier requires client-side requests; server-side POST returns 403. */
+function web3FormsAccessKey() {
+  return process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY?.trim() ?? ""
 }
 
-function formSubmitRecipient() {
-  return process.env.FORMSUBMIT_EMAIL ?? siteConfig.email
+function mailtoFallback(purpose: string, payload: EnquiryPayload): EnquiryResult {
+  const subject = encodeURIComponent(`${siteConfig.name} ${purpose}`)
+  const text = encodeURIComponent(JSON.stringify(payload, null, 2))
+  return {
+    status: "unconfigured",
+    mailto: `mailto:${siteConfig.email}?subject=${subject}&body=${text}`,
+  }
 }
 
-function payloadToFormSubmitBody(purpose: string, payload: EnquiryPayload) {
+function payloadToWeb3FormsBody(purpose: string, payload: EnquiryPayload) {
+  const accessKey = web3FormsAccessKey()
   const body: Record<string, string> = {
-    _subject: `${siteConfig.name} - ${purpose} enquiry`,
-    _template: "table",
-    _captcha: "false",
+    access_key: accessKey,
+    subject: `${siteConfig.name} - ${purpose} enquiry`,
     purpose,
     source: siteConfig.url,
+    botcheck: "",
   }
 
+  if ("fullName" in payload && payload.fullName) {
+    body.name = payload.fullName
+    body.from_name = payload.fullName
+  }
+  if ("contactPerson" in payload && payload.contactPerson) {
+    body.name = payload.contactPerson
+    body.from_name = payload.contactPerson
+  }
   if ("email" in payload && payload.email) {
-    body._replyto = payload.email
+    body.email = payload.email
+    body.replyto = payload.email
   }
 
   for (const [key, value] of Object.entries(payload)) {
@@ -44,24 +58,24 @@ function payloadToFormSubmitBody(purpose: string, payload: EnquiryPayload) {
 }
 
 export async function submitEnquiry(purpose: string, payload: EnquiryPayload): Promise<EnquiryResult> {
-  const recipient = formSubmitRecipient()
-  const endpoint = `https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`
+  const accessKey = web3FormsAccessKey()
+  if (!accessKey) {
+    return mailtoFallback(purpose, payload)
+  }
 
   try {
-    const response = await fetch(endpoint, {
+    const response = await fetch(WEB3FORMS_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        Origin: siteConfig.url,
-        Referer: `${siteConfig.url}/contact`,
       },
-      body: JSON.stringify(payloadToFormSubmitBody(purpose, payload)),
+      body: JSON.stringify(payloadToWeb3FormsBody(purpose, payload)),
     })
 
-    let data: { success?: string | boolean; message?: string } | null = null
+    let data: { success?: boolean; message?: string } | null = null
     try {
-      data = (await response.json()) as { success?: string | boolean; message?: string }
+      data = (await response.json()) as { success?: boolean; message?: string }
     } catch {
       data = null
     }
@@ -73,20 +87,15 @@ export async function submitEnquiry(purpose: string, payload: EnquiryPayload): P
       }
     }
 
-    if (data?.success === true || data?.success === "true") {
+    if (data?.success === true) {
       return { status: "sent" }
     }
 
     return {
       status: "error",
-      message: providerRejectedMessage(data?.message),
+      message: visitorErrorMessage,
     }
   } catch {
-    const subject = encodeURIComponent(`${siteConfig.name} ${purpose}`)
-    const text = encodeURIComponent(JSON.stringify(payload, null, 2))
-    return {
-      status: "unconfigured",
-      mailto: `mailto:${siteConfig.email}?subject=${subject}&body=${text}`,
-    }
+    return mailtoFallback(purpose, payload)
   }
 }

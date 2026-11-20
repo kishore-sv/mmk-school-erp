@@ -3,6 +3,44 @@ import { siteConfig, telHref } from "@/config/site"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Card, CardContent } from "@/components/ui/card"
 import type { EnquiryResult } from "@/lib/forms/submit-enquiry"
+import { cn } from "cn"
+
+/** Matches validation in `contactSchema` / `demoSchema` message field. */
+export const ENQUIRY_MESSAGE_MIN = 10
+export const ENQUIRY_MESSAGE_MAX = 2000
+
+export function MessageCharacterCount({
+  id,
+  length,
+  min = ENQUIRY_MESSAGE_MIN,
+  max = ENQUIRY_MESSAGE_MAX,
+}: {
+  id?: string
+  length: number
+  min?: number
+  max?: number
+}) {
+  const overMax = length > max
+  const underMin = length > 0 && length < min
+
+  return (
+    <div
+      id={id}
+      className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground"
+    >
+      <span className={cn(underMin && "text-destructive")}>
+        {length === 0 ? `Minimum ${min} characters` : underMin ? `${min - length} more to reach minimum` : null}
+      </span>
+      <span
+        className={cn("tabular-nums", overMax && "text-destructive")}
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {length}/{max}
+      </span>
+    </div>
+  )
+}
 
 export function RequiredMark() {
   return (
