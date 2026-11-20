@@ -2,6 +2,7 @@ import Link from "next/link"
 import { IconBrandYoutube, IconMail, IconPhone, IconWorld } from "@tabler/icons-react"
 import { MmkLogoStacked } from "@/components/brand/mmk-logo"
 import { CopyrightLine } from "@/components/layout/copyright-line"
+import { MobileStoreBadges } from "@/components/marketing/mobile-store-badges"
 import { footerColumns } from "@/config/footer"
 import { siteConfig, telHref } from "@/config/site"
 
@@ -37,6 +38,7 @@ export function SiteFooter() {
         <div className="col-span-2 lg:col-span-2">
           <MmkLogoStacked />
           <p className="mt-4 max-w-sm text-sm leading-6 text-muted-foreground">{siteConfig.description}</p>
+          <MobileStoreBadges variant="dark" className="mt-4 flex-row flex-wrap gap-2" />
         </div>
         {footerColumns.map((column) => (
           <div key={column.title}>
