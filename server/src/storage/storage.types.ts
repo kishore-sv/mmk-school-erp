@@ -56,7 +56,7 @@ export interface UploadConstraints {
  * as proof that every operation works the same way.
  */
 export interface StorageCapabilities {
-  multipart: "unverified"
-  presignedUrls: "unverified"
-  publicBucketsByDefault: false
+  multipart: "verified" | "unverified"
+  presignedUrls: "verified" | "unverified"
+  publicBucketsByDefault: boolean
 }

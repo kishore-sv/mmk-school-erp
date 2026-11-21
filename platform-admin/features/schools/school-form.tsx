@@ -37,9 +37,12 @@ export type SchoolFormValues = {
   subscriptionEnd: string
   studentLimit: string
   commercialNotes: string
+  description: string
   adminName: string
   adminEmail: string
   adminPhone: string
+  adminPassword: string
+  adminPasswordConfirm: string
 }
 
 export const emptySchoolForm: SchoolFormValues = {
@@ -63,9 +66,12 @@ export const emptySchoolForm: SchoolFormValues = {
   subscriptionEnd: "",
   studentLimit: "",
   commercialNotes: "",
+  description: "",
   adminName: "",
   adminEmail: "",
   adminPhone: "",
+  adminPassword: "",
+  adminPasswordConfirm: "",
 }
 
 function payload(values: SchoolFormValues, includeCode: boolean) {
@@ -90,9 +96,12 @@ function payload(values: SchoolFormValues, includeCode: boolean) {
     subscriptionEnd: values.subscriptionEnd,
     studentLimit: values.studentLimit ? Number(values.studentLimit) : undefined,
     commercialNotes: values.commercialNotes,
+    description: values.description,
     adminName: values.adminName,
     adminEmail: values.adminEmail,
     adminPhone: values.adminPhone,
+    adminPassword: values.adminPassword,
+    adminPasswordConfirm: values.adminPasswordConfirm,
   }
 }
 
@@ -105,9 +114,11 @@ export function SchoolForm({
   initial: SchoolFormValues
   includeCode: boolean
   submitLabel: string
-  onSubmit: (body: ReturnType<typeof payload>) => Promise<void>
+  onSubmit: (body: ReturnType<typeof payload>, files: { logo: File | null; banner: File | null }) => Promise<void>
 }) {
   const [values, setValues] = useState(initial)
+  const [logo, setLogo] = useState<File | null>(null)
+  const [banner, setBanner] = useState<File | null>(null)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState("")
 
@@ -120,7 +131,7 @@ export function SchoolForm({
     setPending(true)
     setError("")
     try {
-      await onSubmit(payload(values, includeCode))
+      await onSubmit(payload(values, includeCode), { logo, banner })
     } catch (caught) {
       const failure = caught as ApiFailure
       const detail = failure.details?.[0]
@@ -206,13 +217,34 @@ export function SchoolForm({
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-medium">Initial school admin</h2>
         <p className="text-muted-foreground text-sm">
-          The account is created as a pending invitation. No password is chosen here, and no email is sent until invitation delivery is configured.
+          Set an initial password for the first sign-in. The password is stored as a hash and is not included in the welcome email. Leave it blank only when the administrator will set a password through recovery later.
         </p>
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="Full name" value={values.adminName} onChange={(value) => set("adminName", value)} required />
           <Field label="Email" type="email" value={values.adminEmail} onChange={(value) => set("adminEmail", value)} required />
           <Field label="Phone number" value={values.adminPhone} onChange={(value) => set("adminPhone", value)} required />
+          <Field label="Initial password" type="password" value={values.adminPassword} onChange={(value) => set("adminPassword", value)} />
+          <Field label="Confirm password" type="password" value={values.adminPasswordConfirm} onChange={(value) => set("adminPasswordConfirm", value)} />
         </div>
+        <p className="text-muted-foreground text-sm">Use at least 12 characters with a letter and a number.</p>
+      </section>
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-medium">School branding</h2>
+        <p className="text-muted-foreground text-sm">PNG, JPEG, or WebP. Logo up to 2 MB. Banner up to 8 MB. SVG files are not accepted.</p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="school-logo">School logo</Label>
+            <Input id="school-logo" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setLogo(event.target.files?.[0] ?? null)} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="school-banner">School banner</Label>
+            <Input id="school-banner" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setBanner(event.target.files?.[0] ?? null)} />
+          </div>
+        </div>
+      </section>
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-medium">School description</h2>
+        <Textarea value={values.description} onChange={(event) => set("description", event.target.value)} />
       </section>
       {error ? <p className="text-destructive text-sm">{error}</p> : null}
       <Button type="submit" disabled={pending} className="w-fit">

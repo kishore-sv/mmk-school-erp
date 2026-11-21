@@ -4,8 +4,10 @@ import express from "express"
 import { env } from "./config"
 import { errorHandler } from "./middleware/error-handler"
 import { requestId } from "./middleware/request-id"
-import { platformRouter } from "./features/platform/platform.routes"
 import { healthRouter } from "./routes/health"
+import { platformRouter } from "./features/platform/platform.routes"
+import { schoolRouter } from "./features/school/school.routes"
+import { isAllowedBrowserOrigin } from "./tenant/origins"
 
 export function createApp() {
   const app = express()
@@ -13,19 +15,22 @@ export function createApp() {
   app.use(requestId)
   app.use(express.json({ limit: "1mb" }))
 
-  const origins = env.CORS_ORIGINS.split(",")
-    .map((origin: string) => origin.trim())
-    .filter((origin: string) => origin.length > 0)
-
   app.use(
     cors({
-      origin: origins,
+      origin(origin, callback) {
+        if (!origin || isAllowedBrowserOrigin(origin, env)) {
+          callback(null, true)
+          return
+        }
+        callback(null, false)
+      },
       credentials: true,
     }),
   )
 
   app.use(healthRouter)
   app.use("/v1/platform", platformRouter)
+  app.use("/v1/school", schoolRouter)
 
   app.use((_req, res) => {
     res.status(404).json({

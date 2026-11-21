@@ -1,42 +1,18 @@
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+import { RegisterCrumbs } from "@/components/page-crumbs"
+import type { Crumb } from "@/lib/page-titles"
 
 export function PageHeader({
   title,
   description,
-  crumbs,
+  crumbs = [],
 }: {
   title: string
   description?: string
-  crumbs: Array<{ label: string; href?: string }>
+  crumbs?: Crumb[]
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <Breadcrumb>
-        <BreadcrumbList>
-          {crumbs.map((crumb, index) => {
-            const last = index === crumbs.length - 1
-            return (
-              <span key={`${crumb.label}-${index}`} className="contents">
-                <BreadcrumbItem>
-                  {last || !crumb.href ? (
-                    <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                  ) : (
-                    <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink>
-                  )}
-                </BreadcrumbItem>
-                {last ? null : <BreadcrumbSeparator />}
-              </span>
-            )
-          })}
-        </BreadcrumbList>
-      </Breadcrumb>
+      {crumbs.length > 0 ? <RegisterCrumbs crumbs={crumbs} /> : null}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         {description ? (

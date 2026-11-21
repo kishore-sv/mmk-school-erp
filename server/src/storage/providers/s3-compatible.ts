@@ -1,8 +1,20 @@
-import { HeadBucketCommand, S3Client } from "@aws-sdk/client-s3"
+import {
+  AbortMultipartUploadCommand,
+  CompleteMultipartUploadCommand,
+  CreateMultipartUploadCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadBucketCommand,
+  HeadObjectCommand,
+  PutBucketCorsCommand,
+  PutObjectCommand,
+  S3Client,
+  UploadPartCommand,
+} from "@aws-sdk/client-s3"
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 
 import type { Env, StorageProviderName } from "../../config"
 import type { StorageProvider } from "../storage.interface"
-import { StorageNotImplementedError } from "../storage.types"
 import type {
   MultipartPart,
   MultipartUpload,
@@ -13,11 +25,13 @@ import type {
   UploadConstraints,
 } from "../storage.types"
 
-const unverifiedCapabilities: StorageCapabilities = {
-  multipart: "unverified",
-  presignedUrls: "unverified",
+const verifiedCapabilities: StorageCapabilities = {
+  multipart: "verified",
+  presignedUrls: "verified",
   publicBucketsByDefault: false,
 }
+
+const PRESIGN_SECONDS = 900
 
 export interface S3CompatibleSettings {
   provider: StorageProviderName
@@ -45,7 +59,7 @@ export function settingsFromEnv(
 }
 
 export abstract class S3CompatibleStorageProvider implements StorageProvider {
-  readonly capabilities = unverifiedCapabilities
+  readonly capabilities = verifiedCapabilities
   protected readonly client: S3Client
   protected readonly bucket: string
 
@@ -65,6 +79,24 @@ export abstract class S3CompatibleStorageProvider implements StorageProvider {
     })
   }
 
+  async configureDevCors(): Promise<void> {
+    await this.client.send(
+      new PutBucketCorsCommand({
+        Bucket: this.bucket,
+        CORSConfiguration: {
+          CORSRules: [
+            {
+              AllowedOrigins: ["*"],
+              AllowedMethods: ["GET", "PUT", "POST", "HEAD", "DELETE"],
+              AllowedHeaders: ["*"],
+              ExposeHeaders: ["ETag"],
+            },
+          ],
+        },
+      }),
+    )
+  }
+
   async checkAvailability(): Promise<boolean> {
     try {
       await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }))
@@ -74,69 +106,161 @@ export abstract class S3CompatibleStorageProvider implements StorageProvider {
     }
   }
 
-  uploadObject(
-    _location: ObjectLocation,
-    _body: Uint8Array,
-    _constraints: UploadConstraints,
+  private assertKey(key: string): void {
+    if (!key || key.startsWith("/") || key.includes("..") || key.includes("\\") || key.includes("\0")) {
+      throw new Error("INVALID_OBJECT_KEY")
+    }
+  }
+
+  private location(key: string): ObjectLocation {
+    this.assertKey(key)
+    return { bucket: this.bucket, key }
+  }
+
+  async uploadObject(
+    location: ObjectLocation,
+    body: Uint8Array,
+    constraints: UploadConstraints,
   ): Promise<ObjectMetadata> {
-    return this.unimplemented("uploadObject")
+    this.assertKey(location.key)
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: location.key,
+        Body: body,
+        ContentType: constraints.contentType,
+        ContentLength: body.byteLength,
+      }),
+    )
+    return this.getObjectMetadata(location)
   }
 
-  downloadObject(_location: ObjectLocation): Promise<Uint8Array> {
-    return this.unimplemented("downloadObject")
+  async downloadObject(location: ObjectLocation): Promise<Uint8Array> {
+    this.assertKey(location.key)
+    const response = await this.client.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: location.key, Range: "bytes=0-31" }),
+    )
+    const bytes = await response.Body?.transformToByteArray()
+    return bytes ? new Uint8Array(bytes) : new Uint8Array()
   }
 
-  deleteObject(_location: ObjectLocation): Promise<void> {
-    return this.unimplemented("deleteObject")
+  async deleteObject(location: ObjectLocation): Promise<void> {
+    this.assertKey(location.key)
+    await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: location.key }))
   }
 
-  getObjectMetadata(_location: ObjectLocation): Promise<ObjectMetadata> {
-    return this.unimplemented("getObjectMetadata")
+  async getObjectMetadata(location: ObjectLocation): Promise<ObjectMetadata> {
+    this.assertKey(location.key)
+    const head = await this.client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: location.key }))
+    return {
+      bucket: this.bucket,
+      key: location.key,
+      size: head.ContentLength ?? null,
+      contentType: head.ContentType ?? null,
+      eTag: head.ETag ?? null,
+    }
   }
 
-  objectExists(_location: ObjectLocation): Promise<boolean> {
-    return this.unimplemented("objectExists")
+  async objectExists(location: ObjectLocation): Promise<boolean> {
+    try {
+      await this.getObjectMetadata(location)
+      return true
+    } catch {
+      return false
+    }
   }
 
-  createPresignedUploadUrl(
-    _location: ObjectLocation,
-    _constraints: UploadConstraints,
+  async createPresignedUploadUrl(
+    location: ObjectLocation,
+    constraints: UploadConstraints,
   ): Promise<PresignedRequest> {
-    return this.unimplemented("createPresignedUploadUrl")
+    this.assertKey(location.key)
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: location.key,
+      ContentType: constraints.contentType,
+      ContentLength: constraints.contentLength,
+    })
+    const url = await getSignedUrl(this.client, command, { expiresIn: PRESIGN_SECONDS })
+    return {
+      url,
+      method: "PUT",
+      expiresAt: new Date(Date.now() + PRESIGN_SECONDS * 1000).toISOString(),
+      headers: { "content-type": constraints.contentType },
+    }
   }
 
-  createPresignedDownloadUrl(
-    _location: ObjectLocation,
-  ): Promise<PresignedRequest> {
-    return this.unimplemented("createPresignedDownloadUrl")
+  async createPresignedDownloadUrl(location: ObjectLocation): Promise<PresignedRequest> {
+    this.assertKey(location.key)
+    const command = new GetObjectCommand({ Bucket: this.bucket, Key: location.key })
+    const url = await getSignedUrl(this.client, command, { expiresIn: PRESIGN_SECONDS })
+    return {
+      url,
+      method: "GET",
+      expiresAt: new Date(Date.now() + PRESIGN_SECONDS * 1000).toISOString(),
+    }
   }
 
-  createMultipartUpload(
-    _location: ObjectLocation,
-    _constraints: UploadConstraints,
+  async createMultipartUpload(
+    location: ObjectLocation,
+    constraints: UploadConstraints,
   ): Promise<MultipartUpload> {
-    return this.unimplemented("createMultipartUpload")
+    this.assertKey(location.key)
+    const created = await this.client.send(
+      new CreateMultipartUploadCommand({
+        Bucket: this.bucket,
+        Key: location.key,
+        ContentType: constraints.contentType,
+      }),
+    )
+    if (!created.UploadId) {
+      throw new Error("MULTIPART_CREATE_FAILED")
+    }
+    return { bucket: this.bucket, key: location.key, uploadId: created.UploadId }
   }
 
-  createMultipartPartUrl(
-    _upload: MultipartUpload,
-    _partNumber: number,
-  ): Promise<PresignedRequest> {
-    return this.unimplemented("createMultipartPartUrl")
+  async createMultipartPartUrl(upload: MultipartUpload, partNumber: number): Promise<PresignedRequest> {
+    this.assertKey(upload.key)
+    if (upload.bucket !== this.bucket) {
+      throw new Error("INVALID_OBJECT_KEY")
+    }
+    const command = new UploadPartCommand({
+      Bucket: this.bucket,
+      Key: upload.key,
+      UploadId: upload.uploadId,
+      PartNumber: partNumber,
+    })
+    const url = await getSignedUrl(this.client, command, { expiresIn: PRESIGN_SECONDS })
+    return {
+      url,
+      method: "PUT",
+      expiresAt: new Date(Date.now() + PRESIGN_SECONDS * 1000).toISOString(),
+    }
   }
 
-  completeMultipartUpload(
-    _upload: MultipartUpload,
-    _parts: MultipartPart[],
-  ): Promise<ObjectMetadata> {
-    return this.unimplemented("completeMultipartUpload")
+  async completeMultipartUpload(upload: MultipartUpload, parts: MultipartPart[]): Promise<ObjectMetadata> {
+    this.assertKey(upload.key)
+    await this.client.send(
+      new CompleteMultipartUploadCommand({
+        Bucket: this.bucket,
+        Key: upload.key,
+        UploadId: upload.uploadId,
+        MultipartUpload: {
+          Parts: parts.map((part) => ({ ETag: part.eTag, PartNumber: part.partNumber })),
+        },
+      }),
+    )
+    return this.getObjectMetadata(this.location(upload.key))
   }
 
-  abortMultipartUpload(_upload: MultipartUpload): Promise<void> {
-    return this.unimplemented("abortMultipartUpload")
-  }
-
-  private unimplemented(operation: string): Promise<never> {
-    return Promise.reject(new StorageNotImplementedError(this.name, operation))
+  async abortMultipartUpload(upload: MultipartUpload): Promise<void> {
+    this.assertKey(upload.key)
+    await this.client.send(
+      new AbortMultipartUploadCommand({
+        Bucket: this.bucket,
+        Key: upload.key,
+        UploadId: upload.uploadId,
+      }),
+    )
   }
 }

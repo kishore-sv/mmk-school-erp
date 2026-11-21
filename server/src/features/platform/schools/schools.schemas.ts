@@ -41,20 +41,41 @@ const schoolFields = z.object({
     subscriptionEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     studentLimit: z.number().int().positive().max(100000).optional(),
     commercialNotes: z.string().trim().max(2000).optional().or(z.literal("")),
+    description: z.string().trim().max(2000).optional().or(z.literal("")),
     adminName: z.string().trim().min(2).max(160),
     adminEmail: z.string().trim().email().max(320).transform(normalizeEmail),
     adminPhone: phone,
+    adminPassword: z.string().max(128).optional().or(z.literal("")),
+    adminPasswordConfirm: z.string().max(128).optional().or(z.literal("")),
   })
 
 const dateOrder = (value: { subscriptionEnd: string; subscriptionStart: string }) =>
   value.subscriptionEnd >= value.subscriptionStart
 
-export const schoolBodySchema = schoolFields.refine(dateOrder, {
+function passwordsMatch(value: { adminPassword?: string; adminPasswordConfirm?: string }, ctx: z.RefinementCtx) {
+  const password = value.adminPassword?.trim() ?? ""
+  const confirm = value.adminPasswordConfirm?.trim() ?? ""
+  if (!password && !confirm) {
+    return
+  }
+  if (password !== confirm) {
+    ctx.addIssue({ code: "custom", path: ["adminPasswordConfirm"], message: "The passwords do not match." })
+  }
+  if (password.length < 12 || password.length > 128 || !/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["adminPassword"],
+      message: "Use at least 12 characters with a letter and a number.",
+    })
+  }
+}
+
+export const schoolBodySchema = schoolFields.superRefine(passwordsMatch).refine(dateOrder, {
   message: "The subscription end date must be on or after the start date.",
   path: ["subscriptionEnd"],
 })
 
-export const schoolUpdateSchema = schoolFields.omit({ schoolCode: true }).refine(dateOrder, {
+export const schoolUpdateSchema = schoolFields.omit({ schoolCode: true }).superRefine(passwordsMatch).refine(dateOrder, {
   message: "The subscription end date must be on or after the start date.",
   path: ["subscriptionEnd"],
 })
@@ -71,6 +92,19 @@ export const listSchoolsSchema = z.object({
 
 export const reasonSchema = z.object({
   reason: z.string().trim().max(500).optional(),
+})
+
+export const lifecycleActionSchema = z.object({
+  action: z.enum(["suspend", "archive"]),
+})
+
+export const lifecycleOtpVerifySchema = z.object({
+  action: z.enum(["suspend", "archive"]),
+  code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code from your email."),
+})
+
+export const protectedLifecycleSchema = reasonSchema.extend({
+  verificationToken: z.string().trim().min(20).max(128),
 })
 
 export type SchoolBody = z.infer<typeof schoolBodySchema>

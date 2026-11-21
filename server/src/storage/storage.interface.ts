@@ -13,6 +13,7 @@ export interface StorageProvider {
   readonly name: StorageProviderName
   readonly capabilities: StorageCapabilities
   checkAvailability(): Promise<boolean>
+  configureDevCors?(): Promise<void>
   uploadObject(
     location: ObjectLocation,
     body: Uint8Array,

@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import {
   IconActivity,
   IconBuilding,
@@ -91,6 +92,45 @@ const groups = [
   },
 ]
 
+type NavGroup = (typeof groups)[number]
+
+function SidebarNavGroup({ group, pathname }: { group: NavGroup; pathname: string }) {
+  const routeOpen = group.items.some((item) => pathname.startsWith(item.href))
+  const [open, setOpen] = useState(routeOpen)
+
+  useEffect(() => {
+    if (routeOpen) {
+      setOpen(true)
+    }
+  }, [routeOpen])
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="group/collapsible">
+      <SidebarMenuItem>
+        <CollapsibleTrigger render={<SidebarMenuButton tooltip={group.title} />}>
+          <group.icon />
+          <span>{group.title}</span>
+          <IconChevronRight className="ml-auto transition-transform group-data-open/collapsible:rotate-90" />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            {group.items.map((item) => (
+              <SidebarMenuSubItem key={item.href}>
+                <SidebarMenuSubButton
+                  isActive={pathname === item.href}
+                  render={<Link href={item.href} />}
+                >
+                  <span>{item.title}</span>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            ))}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuItem>
+    </Collapsible>
+  )
+}
+
 export function AppSidebar({ user }: { user: PlatformUser }) {
   const pathname = usePathname()
   const router = useRouter()
@@ -139,34 +179,7 @@ export function AppSidebar({ user }: { user: PlatformUser }) {
           <SidebarGroup key={group.title}>
             <SidebarGroupContent>
               <SidebarMenu>
-                <Collapsible
-                  defaultOpen={group.items.some((item) => pathname.startsWith(item.href))}
-                  className="group/collapsible"
-                >
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger
-                      render={<SidebarMenuButton tooltip={group.title} />}
-                    >
-                      <group.icon />
-                      <span>{group.title}</span>
-                      <IconChevronRight className="ml-auto transition-transform group-data-open/collapsible:rotate-90" />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        {group.items.map((item) => (
-                          <SidebarMenuSubItem key={item.href}>
-                            <SidebarMenuSubButton
-                              isActive={pathname === item.href}
-                              render={<Link href={item.href} />}
-                            >
-                              <span>{item.title}</span>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
+                <SidebarNavGroup group={group} pathname={pathname} />
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

@@ -15,7 +15,7 @@ export default async function PasswordPage() {
             : "Replace the password for this platform administrator account."
         }
         crumbs={[
-          { label: "Platform", href: "/dashboard" },
+          { label: "Dashboard", href: "/dashboard" },
           { label: "Change password" },
         ]}
       />

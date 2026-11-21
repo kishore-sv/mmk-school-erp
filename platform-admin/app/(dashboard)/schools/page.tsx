@@ -1,7 +1,7 @@
 import Link from "next/link"
 
 import { PageHeader } from "@/components/page-header"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/status-badge"
 import {
   Pagination,
   PaginationContent,
@@ -57,7 +57,7 @@ export default async function SchoolsPage({
       <PageHeader
         title="All schools"
         description="Schools registered on the MMK platform."
-        crumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Schools" }]}
+        crumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "All schools" }]}
       />
       <SchoolFilters
         q={typeof params.q === "string" ? params.q : ""}
@@ -94,8 +94,8 @@ export default async function SchoolsPage({
                   <TableCell>{school.schoolCode}</TableCell>
                   <TableCell>{school.email}</TableCell>
                   <TableCell>{school.phone}</TableCell>
-                  <TableCell><Badge variant="outline">{school.subscriptionStatus}</Badge></TableCell>
-                  <TableCell><Badge variant="secondary">{school.status}</Badge></TableCell>
+                  <TableCell><StatusBadge value={school.subscriptionStatus} /></TableCell>
+                  <TableCell><StatusBadge value={school.status} /></TableCell>
                   <TableCell>{school.studentCount === null ? "Unavailable" : school.studentCount}</TableCell>
                   <TableCell>{formatDate(school.createdAt)}</TableCell>
                   <TableCell>

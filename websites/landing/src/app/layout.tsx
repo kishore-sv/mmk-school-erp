@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { SiteFooter } from "@/components/layout/site-footer"
 import { SiteHeader } from "@/components/layout/site-header"
+import { RouteBreadcrumbs } from "@/components/marketing/route-breadcrumbs"
 import { rootLayoutMetadata } from "@/lib/seo/create-metadata"
 import { JsonLd, organizationJsonLd, softwareJsonLd, websiteJsonLd } from "@/lib/seo/schema"
 import { Toaster } from "@/components/ui/sonner"
@@ -31,9 +32,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <JsonLd data={websiteJsonLd()} />
         <JsonLd data={softwareJsonLd()} />
         <SiteHeader />
+        <RouteBreadcrumbs />
         <main className="flex-1">{children}</main>
         <SiteFooter />
-        <Toaster closeButton={true} richColors position="top-right"/>
+        <Toaster />
       </body>
     </html>
   )

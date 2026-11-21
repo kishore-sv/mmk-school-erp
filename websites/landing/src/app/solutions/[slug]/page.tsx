@@ -3,7 +3,6 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { CtaBand, PageContainer } from "@/components/marketing/page-shell"
 import { CatalogDetailSkeleton } from "@/components/marketing/catalog-detail-skeleton"
-import { SiteBreadcrumbs } from "@/components/marketing/site-breadcrumbs"
 import { getModule } from "@/data/modules"
 import { getSolution, solutions } from "@/data/solutions"
 import { createMetadata } from "@/lib/seo/create-metadata"
@@ -26,7 +25,6 @@ async function SolutionDetail({ params }: { params: Promise<{ slug: string }> })
   return (
     <>
       <PageContainer className="py-10">
-        <SiteBreadcrumbs items={[{ label: "Home", href: "/" }, { label: "Solutions", href: "/solutions" }, { label: item.title }]} />
         <p className="text-sm text-muted-foreground">{item.audience}</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">{item.title}</h1>
         <p className="mt-4 max-w-3xl leading-7">{item.definition}</p>

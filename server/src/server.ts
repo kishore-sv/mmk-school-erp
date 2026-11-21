@@ -1,6 +1,11 @@
 import { createApp } from "./app"
 import { env } from "./config"
+import { createStorageProvider } from "./storage"
 import { log } from "./utils/logger"
+
+if (env.NODE_ENV !== "production") {
+  await createStorageProvider(env).configureDevCors?.().catch(() => undefined)
+}
 
 const app = createApp()
 

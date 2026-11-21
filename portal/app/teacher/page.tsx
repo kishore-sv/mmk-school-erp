@@ -5,8 +5,7 @@ export default function TeacherPage() {
   return (
     <PortalFrame
       sidebar={<TeacherSidebar />}
-      section="Teacher"
-      title="Teacher placeholder"
+      title="Teacher"
       description="Teacher navigation is separate from the student and parent shells. No teaching workflows are implemented."
     />
   )

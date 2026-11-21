@@ -9,7 +9,7 @@ export default function CreateSchoolPage() {
         description="Register a school, its commercial terms, and the first school administrator."
         crumbs={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "Schools", href: "/schools" },
+          { label: "All schools", href: "/schools" },
           { label: "Create school" },
         ]}
       />

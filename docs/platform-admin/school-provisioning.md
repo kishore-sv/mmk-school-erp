@@ -5,13 +5,13 @@
 1. A tenant whose key is the school code.
 2. The school row, marked `provisioning_status = ready`.
 3. The commercial terms, with the rate supplied by the administrator.
-4. The initial school administrator in `pending_invitation`, without a password.
+4. The initial school administrator. If an initial password is supplied it is hashed with Argon2id, the account is `active`, and a password change is required on first sign-in. The password is not stored in the audit row and is not emailed. Without a password the account stays `pending_invitation`.
 5. An idempotency record when `Idempotency-Key` is sent.
 6. A `school.created` audit row.
 
 A unique school code returns HTTP 409. A repeated idempotency key with the same body returns the existing school. A different body for the same key returns HTTP 409. If the transaction fails, none of the rows remain.
 
-The school administrator invitation is stored with `invitation_delivery = not_configured`. The API does not send email. The worker does not register an invitation job yet.
+After the school transaction commits, the API enqueues a welcome email. A failed email job does not roll back the school. The welcome message contains the school name, school code, administrator email, and login URL. It does not contain the password. See `docs/school-admin/email-and-worker.md`.
 
 ## Not provisioned
 

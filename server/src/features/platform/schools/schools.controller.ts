@@ -2,7 +2,16 @@ import type { RequestHandler } from "express"
 import { ZodError } from "zod"
 
 import { ApiError } from "../errors"
-import { listSchoolsSchema, reasonSchema, schoolBodySchema, schoolUpdateSchema } from "./schools.schemas"
+import {
+  lifecycleActionSchema,
+  lifecycleOtpVerifySchema,
+  listSchoolsSchema,
+  protectedLifecycleSchema,
+  reasonSchema,
+  schoolBodySchema,
+  schoolUpdateSchema,
+} from "./schools.schemas"
+import * as lifecycleVerification from "./lifecycle-verification.service"
 import * as schools from "./schools.service"
 
 function meta(req: Parameters<RequestHandler>[0]) {
@@ -89,19 +98,68 @@ function lifecycle(action: "suspend" | "activate" | "archive"): RequestHandler {
       if (typeof id !== "string") {
         throw new ApiError(400, "VALIDATION_ERROR", "A school id is required.")
       }
-      const body = parseBody(reasonSchema, req.body ?? {})
+      if (action === "activate") {
+        const body = parseBody(reasonSchema, req.body ?? {})
+        res.status(200).json({
+          school: await schools.activateSchool(actor(req), id, body.reason, meta(req)),
+        })
+        return
+      }
+      const body = parseBody(protectedLifecycleSchema, req.body ?? {})
       const handler =
-        action === "suspend"
-          ? schools.suspendSchool
-          : action === "activate"
-            ? schools.activateSchool
-            : schools.archiveSchool
+        action === "suspend" ? schools.suspendSchool : schools.archiveSchool
       res.status(200).json({
-        school: await handler(actor(req), id, body.reason, meta(req)),
+        school: await handler(
+          actor(req),
+          id,
+          body.reason,
+          meta(req),
+          body.verificationToken,
+        ),
       })
     } catch (error) {
       next(error)
     }
+  }
+}
+
+export const requestLifecycleVerification: RequestHandler = async (req, res, next) => {
+  try {
+    const id = req.params.id
+    if (typeof id !== "string") {
+      throw new ApiError(400, "VALIDATION_ERROR", "A school id is required.")
+    }
+    const body = parseBody(lifecycleActionSchema, req.body ?? {})
+    res.status(200).json(
+      await lifecycleVerification.requestSchoolLifecycleOtp(
+        actor(req),
+        id,
+        body.action,
+        meta(req),
+      ),
+    )
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const confirmLifecycleVerification: RequestHandler = async (req, res, next) => {
+  try {
+    const id = req.params.id
+    if (typeof id !== "string") {
+      throw new ApiError(400, "VALIDATION_ERROR", "A school id is required.")
+    }
+    const body = parseBody(lifecycleOtpVerifySchema, req.body ?? {})
+    res.status(200).json(
+      await lifecycleVerification.verifySchoolLifecycleOtp(
+        actor(req),
+        id,
+        body.action,
+        body.code,
+      ),
+    )
+  } catch (error) {
+    next(error)
   }
 }
 

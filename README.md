@@ -2,6 +2,8 @@
 
 Monorepo for the MMK School platform. Platform Admin can sign in and register schools. Other product workflows are not implemented yet.
 
+Product UI conventions (Sonner toasts, lifecycle status chips): [docs/ui-conventions.md](docs/ui-conventions.md).
+
 ## Applications
 
 | App | Path | Local command | Port |

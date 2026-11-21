@@ -2,7 +2,6 @@ import { Suspense } from "react"
 import { notFound } from "next/navigation"
 import { CtaBand, PageContainer } from "@/components/marketing/page-shell"
 import { CatalogDetailSkeleton } from "@/components/marketing/catalog-detail-skeleton"
-import { SiteBreadcrumbs } from "@/components/marketing/site-breadcrumbs"
 import { getIntegration, integrations } from "@/data/integrations"
 import { createMetadata } from "@/lib/seo/create-metadata"
 
@@ -24,9 +23,6 @@ async function IntegrationDetail({ params }: { params: Promise<{ slug: string }>
   return (
     <>
       <PageContainer className="py-10">
-        <SiteBreadcrumbs
-          items={[{ label: "Home", href: "/" }, { label: "Integrations", href: "/integrations" }, { label: item.title }]}
-        />
         <h1 className="text-3xl font-semibold tracking-tight">{item.title}</h1>
         <p className="mt-4 max-w-3xl text-base leading-7">{item.definition}</p>
         <ul className="mt-8 flex max-w-3xl flex-col gap-3 text-sm leading-6">

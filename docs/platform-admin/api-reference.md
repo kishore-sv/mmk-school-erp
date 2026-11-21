@@ -22,9 +22,11 @@ Errors use `{ error: { code, message, requestId, details } }`. Validation detail
 | POST | `/schools` | Optional `Idempotency-Key` |
 | GET | `/schools/:id` | Identity, commercial terms, invitation state, usage, audit |
 | PATCH | `/schools/:id` | School code cannot change |
-| POST | `/schools/:id/suspend` | Optional `reason` |
-| POST | `/schools/:id/activate` | |
-| POST | `/schools/:id/archive` | Optional `reason` |
+| POST | `/schools/:id/lifecycle-verification/request` | `{ "action": "suspend" \| "archive" }` — emails OTP |
+| POST | `/schools/:id/lifecycle-verification/verify` | `{ "action", "code" }` → `verificationToken` |
+| POST | `/schools/:id/suspend` | `reason?`, `verificationToken` (required) |
+| POST | `/schools/:id/activate` | Optional `reason` (no OTP) |
+| POST | `/schools/:id/archive` | `reason?`, `verificationToken` (required) |
 
 School and dashboard routes also reject a session that still has `mustChangePassword`.
 

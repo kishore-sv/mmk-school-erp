@@ -5,8 +5,7 @@ export default function ParentPage() {
   return (
     <PortalFrame
       sidebar={<ParentSidebar />}
-      section="Parent"
-      title="Parent placeholder"
+      title="Parent"
       description="Parent navigation is separate from the teacher and student shells. No parent workflows are implemented."
     />
   )

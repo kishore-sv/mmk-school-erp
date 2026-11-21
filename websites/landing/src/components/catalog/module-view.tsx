@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { CtaBand, PageContainer } from "@/components/marketing/page-shell"
-import { SiteBreadcrumbs } from "@/components/marketing/site-breadcrumbs"
 import { FaqList } from "@/components/marketing/faq-list"
 import { JsonLd, breadcrumbJsonLd, faqJsonLd } from "@/lib/seo/schema"
 import { getModule, modules, type ModuleRecord } from "@/data/modules"
@@ -20,7 +19,6 @@ export function ModuleView({ module }: { module: ModuleRecord }) {
       <JsonLd data={breadcrumbJsonLd(crumbs.map((item) => ({ name: item.label, path: item.href ?? `/modules/${module.slug}` })))} />
       {faqs.length ? <JsonLd data={faqJsonLd(faqs)} /> : null}
       <PageContainer className="py-10">
-        <SiteBreadcrumbs items={crumbs} />
         <p className="text-sm text-muted-foreground">Module</p>
         <h1 className="mt-2 max-w-3xl text-3xl font-semibold tracking-tight md:text-4xl">{module.title}</h1>
         <p className="mt-4 max-w-3xl text-base leading-7">{module.definition}</p>

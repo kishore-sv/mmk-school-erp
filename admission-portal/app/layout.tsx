@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Geist_Mono, Inter } from "next/font/google"
 
+import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 
 import "./globals.css"
@@ -33,7 +34,10 @@ export default function RootLayout({
       )}
       style={{ colorScheme: "light" }}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        <Toaster />
+      </body>
     </html>
   )
 }

@@ -51,11 +51,53 @@ export const billingFrequency = pgEnum("school_billing_frequency", [
 
 export const schoolAdminInviteStatus = pgEnum("school_admin_invite_status", [
   "pending_invitation",
+  "active",
+  "disabled",
 ])
 
 export const invitationDeliveryStatus = pgEnum("invitation_delivery_status", [
   "not_configured",
+  "queued",
+  "previewed",
+  "sent",
+  "failed",
 ])
+
+export const emailJobPriority = pgEnum("email_job_priority", [
+  "critical",
+  "high",
+  "normal",
+  "low",
+])
+
+export const emailJobStatus = pgEnum("email_job_status", [
+  "queued",
+  "processing",
+  "previewed",
+  "sent",
+  "failed",
+  "dead",
+])
+
+export const storageUploadPurpose = pgEnum("storage_upload_purpose", [
+  "logo",
+  "banner",
+])
+
+export const storageUploadStatus = pgEnum("storage_upload_status", [
+  "pending",
+  "uploaded",
+  "completed",
+  "aborted",
+  "failed",
+])
+
+export const actorKind = pgEnum("actor_kind", ["platform_admin", "school_admin"])
+
+export const platformSchoolLifecycleAction = pgEnum(
+  "platform_school_lifecycle_action",
+  ["suspend", "archive"],
+)
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -205,6 +247,11 @@ export const schools = pgTable(
     postalCode: text("postal_code").notNull(),
     addressLine1: text("address_line_1").notNull(),
     addressLine2: text("address_line_2"),
+    description: text("description"),
+    logoStorageKey: text("logo_storage_key"),
+    bannerStorageKey: text("banner_storage_key"),
+    logoUpdatedAt: timestamp("logo_updated_at", { withTimezone: true }),
+    bannerUpdatedAt: timestamp("banner_updated_at", { withTimezone: true }),
     timezone: text("timezone").notNull().default("Asia/Kolkata"),
     defaultLanguage: text("default_language").notNull().default("en"),
     status: schoolStatus("status").notNull().default("active"),
@@ -222,6 +269,40 @@ export const schools = pgTable(
     uniqueIndex("schools_tenant_code_key").on(table.tenantId, table.schoolCode),
     index("schools_status_idx").on(table.status),
     index("schools_created_idx").on(table.createdAt),
+  ],
+)
+
+export const platformAdminSchoolActionVerifications = pgTable(
+  "platform_admin_school_action_verifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    adminId: uuid("admin_id")
+      .notNull()
+      .references(() => platformAdminUsers.id),
+    schoolId: uuid("school_id")
+      .notNull()
+      .references(() => schools.id),
+    action: platformSchoolLifecycleAction("action").notNull(),
+    otpHash: text("otp_hash").notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    verificationTokenHash: text("verification_token_hash"),
+    verificationTokenExpiresAt: timestamp("verification_token_expires_at", {
+      withTimezone: true,
+    }),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("platform_admin_school_action_verifications_lookup_idx").on(
+      table.adminId,
+      table.schoolId,
+      table.action,
+      table.createdAt,
+    ),
   ],
 )
 
@@ -261,13 +342,19 @@ export const schoolAdminAccounts = pgTable(
     fullName: text("full_name").notNull(),
     email: text("email").notNull(),
     phone: text("phone").notNull(),
+    passwordHash: text("password_hash"),
+    mustChangePassword: boolean("must_change_password").notNull().default(false),
     status: schoolAdminInviteStatus("status")
       .notNull()
       .default("pending_invitation"),
     invitationDelivery: invitationDeliveryStatus("invitation_delivery")
       .notNull()
       .default("not_configured"),
+    lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
@@ -303,15 +390,221 @@ export const platformIdempotencyKeys = pgTable(
   ],
 )
 
+export const schoolAdminSessions = pgTable(
+  "school_admin_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    adminAccountId: uuid("admin_account_id")
+      .notNull()
+      .references(() => schoolAdminAccounts.id),
+    schoolId: uuid("school_id")
+      .notNull()
+      .references(() => schools.id),
+    refreshTokenHash: text("refresh_token_hash").notNull(),
+    tokenFamilyId: uuid("token_family_id").notNull(),
+    userAgent: text("user_agent"),
+    ipAddress: text("ip_address"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("school_admin_sessions_refresh_hash_key").on(table.refreshTokenHash),
+    index("school_admin_sessions_family_idx").on(table.tokenFamilyId),
+    index("school_admin_sessions_user_idx").on(table.adminAccountId),
+  ],
+)
+
+export const schoolAdminPasswordHistory = pgTable(
+  "school_admin_password_history",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    adminAccountId: uuid("admin_account_id")
+      .notNull()
+      .references(() => schoolAdminAccounts.id),
+    passwordHash: text("password_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("school_admin_password_history_user_idx").on(table.adminAccountId),
+  ],
+)
+
+export const schoolAdminLoginAttempts = pgTable(
+  "school_admin_login_attempts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    schoolId: uuid("school_id")
+      .notNull()
+      .references(() => schools.id),
+    email: text("email").notNull(),
+    ipAddress: text("ip_address").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("school_admin_login_attempts_lookup_idx").on(
+      table.schoolId,
+      table.email,
+      table.ipAddress,
+      table.createdAt,
+    ),
+  ],
+)
+
+export const schoolAdminPasswordResets = pgTable(
+  "school_admin_password_resets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    schoolId: uuid("school_id")
+      .notNull()
+      .references(() => schools.id),
+    adminAccountId: uuid("admin_account_id")
+      .notNull()
+      .references(() => schoolAdminAccounts.id),
+    otpHash: text("otp_hash").notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    resetTokenHash: text("reset_token_hash"),
+    resetTokenExpiresAt: timestamp("reset_token_expires_at", { withTimezone: true }),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("school_admin_password_resets_admin_idx").on(table.adminAccountId, table.createdAt),
+  ],
+)
+
+export const schoolAdminAuditLogs = pgTable(
+  "school_admin_audit_logs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    schoolId: uuid("school_id")
+      .notNull()
+      .references(() => schools.id),
+    actorAdminId: uuid("actor_admin_id").references(() => schoolAdminAccounts.id),
+    action: text("action").notNull(),
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id"),
+    beforeData: jsonb("before_data"),
+    afterData: jsonb("after_data"),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    correlationId: text("correlation_id"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("school_admin_audit_logs_school_idx").on(table.schoolId, table.createdAt),
+  ],
+)
+
+export const storageUploads = pgTable(
+  "storage_uploads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    schoolId: uuid("school_id")
+      .notNull()
+      .references(() => schools.id),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    purpose: storageUploadPurpose("purpose").notNull(),
+    objectKey: text("object_key").notNull(),
+    contentType: text("content_type").notNull(),
+    contentLength: integer("content_length").notNull(),
+    status: storageUploadStatus("status").notNull().default("pending"),
+    multipartUploadId: text("multipart_upload_id"),
+    actorKind: actorKind("actor_kind").notNull(),
+    actorId: uuid("actor_id").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("storage_uploads_object_key").on(table.objectKey),
+    index("storage_uploads_school_idx").on(table.schoolId, table.status),
+  ],
+)
+
+export const emailJobs = pgTable(
+  "email_jobs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    priority: emailJobPriority("priority").notNull(),
+    jobType: text("job_type").notNull(),
+    status: emailJobStatus("status").notNull().default("queued"),
+    idempotencyKey: text("idempotency_key").notNull(),
+    schoolId: uuid("school_id").references(() => schools.id),
+    recipient: text("recipient").notNull(),
+    subject: text("subject").notNull(),
+    payload: jsonb("payload").notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(5),
+    lastError: text("last_error"),
+    correlationId: text("correlation_id"),
+    availableAt: timestamp("available_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("email_jobs_idempotency_key").on(table.idempotencyKey),
+    index("email_jobs_status_idx").on(table.status, table.priority),
+  ],
+)
+
+export const emailJobAttempts = pgTable(
+  "email_job_attempts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    jobId: uuid("job_id")
+      .notNull()
+      .references(() => emailJobs.id),
+    error: text("error"),
+    startedAt: timestamp("started_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (table) => [index("email_job_attempts_job_idx").on(table.jobId)],
+)
+
 export const platformTables = {
   platformAdminUsers,
   platformAdminSessions,
   platformAdminPasswordHistory,
   platformAdminAuditLogs,
   platformAdminLoginAttempts,
+  platformAdminSchoolActionVerifications,
   tenants,
   schools,
   schoolCommercialTerms,
   schoolAdminAccounts,
+  schoolAdminSessions,
+  schoolAdminPasswordHistory,
+  schoolAdminLoginAttempts,
+  schoolAdminPasswordResets,
+  schoolAdminAuditLogs,
+  storageUploads,
+  emailJobs,
+  emailJobAttempts,
   platformIdempotencyKeys,
 }

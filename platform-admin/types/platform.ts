@@ -34,6 +34,9 @@ export type SchoolDetail = {
   postalCode: string
   addressLine1: string
   addressLine2: string | null
+  description?: string | null
+  logoStorageKey?: string | null
+  bannerStorageKey?: string | null
   status: "active" | "suspended" | "archived"
   provisioningStatus: string
   archiveReason: string | null

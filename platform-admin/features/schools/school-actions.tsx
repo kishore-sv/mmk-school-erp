@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
-import { toast } from "@/components/toast"
+import { toast } from "sonner"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Sheet,
   SheetContent,
@@ -23,31 +24,96 @@ import {
 } from "@/components/ui/sheet"
 import { Textarea } from "@/components/ui/textarea"
 import { api } from "@/lib/api"
+import { uploadSchoolBranding } from "@/lib/branding-upload"
 import { SchoolForm, type SchoolFormValues } from "@/features/schools/school-form"
 import type { SchoolDetail } from "@/types/platform"
+
+type LifecycleAction = "suspend" | "activate" | "archive"
+
+function needsEmailVerification(action: LifecycleAction | null) {
+  return action === "suspend" || action === "archive"
+}
 
 export function SchoolActions({ school }: { school: SchoolDetail }) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
-  const [action, setAction] = useState<"suspend" | "activate" | "archive" | null>(null)
+  const [action, setAction] = useState<LifecycleAction | null>(null)
+  const [step, setStep] = useState<"details" | "otp">("details")
   const [reason, setReason] = useState("")
+  const [otp, setOtp] = useState("")
+  const [maskedEmail, setMaskedEmail] = useState("")
   const [pending, setPending] = useState(false)
   const archived = school.status === "archived"
 
-  async function confirm() {
-    if (!action) return
+  useEffect(() => {
+    if (action === null) {
+      setStep("details")
+      setOtp("")
+      setMaskedEmail("")
+      setReason("")
+    }
+  }, [action])
+
+  async function sendVerificationCode() {
+    if (!action || !needsEmailVerification(action)) return
     setPending(true)
     try {
+      const result = await api<{ maskedEmail: string }>(
+        `/schools/${school.id}/lifecycle-verification/request`,
+        {
+          method: "POST",
+          body: JSON.stringify({ action }),
+        },
+      )
+      setMaskedEmail(result.maskedEmail)
+      setStep("otp")
+      toast.success("Verification code sent", {
+        description: `Check ${result.maskedEmail} for the 6-digit code.`,
+      })
+    } catch (error) {
+      toast.error("Code not sent", {
+        description: error instanceof Error ? error.message : undefined,
+      })
+    } finally {
+      setPending(false)
+    }
+  }
+
+  async function confirm() {
+    if (!action) return
+    if (needsEmailVerification(action) && step === "details") {
+      await sendVerificationCode()
+      return
+    }
+    setPending(true)
+    try {
+      let verificationToken: string | undefined
+      if (needsEmailVerification(action)) {
+        const verified = await api<{ verificationToken: string }>(
+          `/schools/${school.id}/lifecycle-verification/verify`,
+          {
+            method: "POST",
+            body: JSON.stringify({ action, code: otp }),
+          },
+        )
+        verificationToken = verified.verificationToken
+      }
       await api(`/schools/${school.id}/${action}`, {
         method: "POST",
-        body: JSON.stringify({ reason }),
+        body: JSON.stringify({
+          reason,
+          ...(verificationToken ? { verificationToken } : {}),
+        }),
       })
-      toast("School updated")
+      toast.success("School updated")
       setAction(null)
       setReason("")
+      setOtp("")
       router.refresh()
     } catch (error) {
-      toast("School was not updated", error instanceof Error ? error.message : undefined)
+      toast.error("School was not updated", {
+        description: error instanceof Error ? error.message : undefined,
+      })
     } finally {
       setPending(false)
     }
@@ -74,10 +140,26 @@ export function SchoolActions({ school }: { school: SchoolDetail }) {
     subscriptionEnd: school.commercial.subscriptionEnd.slice(0, 10),
     studentLimit: school.commercial.studentLimit ? String(school.commercial.studentLimit) : "",
     commercialNotes: school.commercial.notes ?? "",
+    description: school.description ?? "",
     adminName: school.initialAdmin.fullName,
     adminEmail: school.initialAdmin.email,
     adminPhone: school.initialAdmin.phone,
+    adminPassword: "",
+    adminPasswordConfirm: "",
   }
+
+  const confirmLabel =
+    step === "otp"
+      ? pending
+        ? "Working..."
+        : "Verify and confirm"
+      : needsEmailVerification(action)
+        ? pending
+          ? "Sending..."
+          : "Send verification code"
+        : pending
+          ? "Working..."
+          : "Confirm"
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -101,12 +183,18 @@ export function SchoolActions({ school }: { school: SchoolDetail }) {
               initial={initial}
               includeCode={false}
               submitLabel="Save changes"
-              onSubmit={async (body) => {
+              onSubmit={async (body, files) => {
                 await api(`/schools/${school.id}`, {
                   method: "PATCH",
                   body: JSON.stringify(body),
                 })
-                toast("School saved")
+                if (files.logo) {
+                  await uploadSchoolBranding(school.id, "logo", files.logo)
+                }
+                if (files.banner) {
+                  await uploadSchoolBranding(school.id, "banner", files.banner)
+                }
+                toast.success("School saved")
                 setEditing(false)
                 router.refresh()
               }}
@@ -123,14 +211,46 @@ export function SchoolActions({ school }: { school: SchoolDetail }) {
             <AlertDialogDescription>
               {action === "archive"
                 ? "Archiving keeps the school record and does not delete tenant data. The school cannot be edited afterward."
-                : "This changes the school's platform status."}
+                : needsEmailVerification(action)
+                  ? step === "otp"
+                    ? `Enter the 6-digit code sent to ${maskedEmail || "your platform admin email"}.`
+                    : "A verification code will be emailed to your platform admin address before this change is applied."
+                  : "This changes the school's platform status."}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <Textarea value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Reason, optional" />
+          {step === "details" ? (
+            <Textarea value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Reason, optional" />
+          ) : (
+            <div className="flex flex-col gap-2">
+              <Input
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                value={otp}
+                onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="6-digit code"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                className="self-start px-0"
+                disabled={pending}
+                onClick={() => void sendVerificationCode()}
+              >
+                Resend code
+              </Button>
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={pending} onClick={() => void confirm()}>
-              {pending ? "Working..." : "Confirm"}
+            <AlertDialogAction
+              disabled={pending || (step === "otp" && otp.length !== 6)}
+              onClick={(event) => {
+                event.preventDefault()
+                void confirm()
+              }}
+            >
+              {confirmLabel}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { CtaBand, PageContainer } from "@/components/marketing/page-shell"
-import { SiteBreadcrumbs } from "@/components/marketing/site-breadcrumbs"
 import { FaqList } from "@/components/marketing/faq-list"
 import { ProductPreview } from "@/components/marketing/product-preview"
 import { JsonLd, breadcrumbJsonLd, faqJsonLd } from "@/lib/seo/schema"
@@ -21,12 +20,6 @@ export function FeatureView({ feature }: { feature: FeatureRecord }) {
       <JsonLd data={breadcrumbJsonLd(crumbs)} />
       <JsonLd data={faqJsonLd(feature.faqs)} />
       <PageContainer className="py-10">
-        <SiteBreadcrumbs
-          items={crumbs.map((item, index) => ({
-            label: item.name,
-            href: index === crumbs.length - 1 ? undefined : item.path,
-          }))}
-        />
         <h1 className="max-w-3xl text-3xl font-semibold tracking-tight md:text-4xl">{feature.title}</h1>
         <p className="mt-4 max-w-3xl text-base leading-7">{feature.definition}</p>
         <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">

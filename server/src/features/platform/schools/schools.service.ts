@@ -11,7 +11,11 @@ import {
   schools,
   tenants,
 } from "../../../db/schema"
+import { buildWelcomeEmail } from "../../school/auth/auth.service"
+import { hashPassword } from "../auth/password"
 import { insertAudit } from "../audit/audit.repository"
+import { enqueueEmail } from "../../../queue/email-queue"
+import { revokeAllForAdmin } from "../../school/auth/auth.repository"
 import { ApiError } from "../errors"
 import type { SchoolBody, SchoolUpdate } from "./schools.schemas"
 
@@ -108,6 +112,9 @@ async function loadSchool(id: string) {
     postalCode: row.school.postalCode,
     addressLine1: row.school.addressLine1,
     addressLine2: row.school.addressLine2,
+    description: row.school.description,
+    logoStorageKey: row.school.logoStorageKey,
+    bannerStorageKey: row.school.bannerStorageKey,
     timezone: row.school.timezone,
     defaultLanguage: row.school.defaultLanguage,
     status: row.school.status,
@@ -204,6 +211,7 @@ export async function createSchool(
           postalCode: body.postalCode,
           addressLine1: body.addressLine1,
           addressLine2: blankToNull(body.addressLine2),
+          description: blankToNull(body.description),
           status: "active",
           provisioningStatus: "ready",
           createdBy: actorId,
@@ -224,11 +232,15 @@ export async function createSchool(
         notes: blankToNull(body.commercialNotes),
         status: commercialState(body.subscriptionStart, body.subscriptionEnd),
       })
+      const password = body.adminPassword?.trim() ?? ""
       await tx.insert(schoolAdminAccounts).values({
         schoolId: school.id,
         fullName: body.adminName,
         email: body.adminEmail,
         phone: body.adminPhone,
+        passwordHash: password ? await hashPassword(password) : null,
+        mustChangePassword: Boolean(password),
+        status: password ? "active" : "pending_invitation",
       })
       if (options?.idempotencyKey) {
         await tx.insert(platformIdempotencyKeys).values({
@@ -250,7 +262,24 @@ export async function createSchool(
       })
       return school.id
     })
-    return loadSchool(schoolId)
+    const created = await loadSchool(schoolId)
+    try {
+      const welcome = buildWelcomeEmail(created, created.initialAdmin.email)
+      await enqueueEmail({
+        priority: "high",
+        jobType: "school.welcome",
+        to: created.initialAdmin.email,
+        subject: welcome.subject,
+        text: welcome.text,
+        html: welcome.html,
+        idempotencyKey: `welcome:${created.id}`,
+        schoolId: created.id,
+        correlationId: meta.correlationId,
+      })
+    } catch {
+      // The school is already committed. Delivery can be retried from the email job row.
+    }
+    return created
   } catch (error) {
     if (error instanceof ApiError) {
       throw error
@@ -369,6 +398,7 @@ export async function updateSchool(
         postalCode: body.postalCode,
         addressLine1: body.addressLine1,
         addressLine2: blankToNull(body.addressLine2),
+        description: blankToNull(body.description),
         updatedAt: new Date(),
         updatedBy: actorId,
       })
@@ -387,14 +417,33 @@ export async function updateSchool(
         updatedAt: new Date(),
       })
       .where(eq(schoolCommercialTerms.schoolId, id))
+    const password = body.adminPassword?.trim() ?? ""
     await tx
       .update(schoolAdminAccounts)
       .set({
         fullName: body.adminName,
         email: body.adminEmail,
         phone: body.adminPhone,
+        ...(password
+          ? {
+              passwordHash: await hashPassword(password),
+              mustChangePassword: true,
+              status: "active" as const,
+            }
+          : {}),
+        updatedAt: new Date(),
       })
       .where(eq(schoolAdminAccounts.schoolId, id))
+    if (password) {
+      const [admin] = await tx
+        .select({ id: schoolAdminAccounts.id })
+        .from(schoolAdminAccounts)
+        .where(eq(schoolAdminAccounts.schoolId, id))
+        .limit(1)
+      if (admin) {
+        await revokeAllForAdmin(tx as unknown as ReturnType<typeof getDb>, admin.id)
+      }
+    }
     await insertAudit(tx, {
       actorAdminId: actorId,
       action: "school.updated",
@@ -461,12 +510,24 @@ async function transition(
   return loadSchool(id)
 }
 
-export const suspendSchool = (
+export const suspendSchool = async (
   actorId: string,
   id: string,
   reason: string | undefined,
   meta: Meta,
-) => transition(actorId, id, "suspend", reason, meta)
+  verificationToken: string,
+) => {
+  const { consumeSchoolLifecycleVerification } = await import(
+    "./lifecycle-verification.service"
+  )
+  await consumeSchoolLifecycleVerification(
+    actorId,
+    id,
+    "suspend",
+    verificationToken,
+  )
+  return transition(actorId, id, "suspend", reason, meta)
+}
 
 export const activateSchool = (
   actorId: string,
@@ -475,9 +536,21 @@ export const activateSchool = (
   meta: Meta,
 ) => transition(actorId, id, "activate", reason, meta)
 
-export const archiveSchool = (
+export const archiveSchool = async (
   actorId: string,
   id: string,
   reason: string | undefined,
   meta: Meta,
-) => transition(actorId, id, "archive", reason, meta)
+  verificationToken: string,
+) => {
+  const { consumeSchoolLifecycleVerification } = await import(
+    "./lifecycle-verification.service"
+  )
+  await consumeSchoolLifecycleVerification(
+    actorId,
+    id,
+    "archive",
+    verificationToken,
+  )
+  return transition(actorId, id, "archive", reason, meta)
+}

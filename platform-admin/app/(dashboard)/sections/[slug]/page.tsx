@@ -1,21 +1,5 @@
 import { PageHeader } from "@/components/page-header"
-
-const titles: Record<string, string> = {
-  plans: "Plans",
-  subscriptions: "Active subscriptions",
-  usage: "Usage and limits",
-  payments: "Payments",
-  invoices: "Invoices",
-  tickets: "Support tickets",
-  requests: "Feature requests",
-  announcements: "Announcements",
-  health: "System health",
-  queues: "Queue monitoring",
-  analytics: "Analytics",
-  audit: "Audit logs and security",
-  users: "Platform users",
-  settings: "Settings",
-}
+import { sectionTitles } from "@/lib/page-titles"
 
 export default async function SectionPage({
   params,
@@ -23,7 +7,7 @@ export default async function SectionPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const title = titles[slug] ?? "Unavailable"
+  const title = sectionTitles[slug] ?? "Unavailable"
   return (
     <div className="flex flex-col gap-6">
       <PageHeader

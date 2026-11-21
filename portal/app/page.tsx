@@ -1,5 +1,6 @@
 import Link from "next/link"
 
+import { AppCrumbs } from "@/components/app-crumbs"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -17,8 +18,10 @@ const experiences = [
 
 export default function HomePage() {
   return (
-    <main className="flex min-h-svh items-center justify-center p-6">
-      <Card className="w-full max-w-lg">
+    <main className="flex min-h-svh flex-col p-6">
+      <AppCrumbs />
+      <div className="flex flex-1 items-center justify-center">
+        <Card className="w-full max-w-lg">
         <CardHeader>
           <CardTitle>Portal</CardTitle>
           <CardDescription>
@@ -44,7 +47,8 @@ export default function HomePage() {
             Login screen
           </Button>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </main>
   )
 }

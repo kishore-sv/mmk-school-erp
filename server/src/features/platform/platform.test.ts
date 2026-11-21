@@ -18,6 +18,7 @@ beforeAll(async () => {
   process.env.PLATFORM_ADMIN_SEED_EMAIL = email
   process.env.PLATFORM_ADMIN_SEED_PASSWORD = password
   process.env.PLATFORM_ADMIN_SEED_NAME = "MMK Platform Administrator"
+  process.env.PLATFORM_OTP_DEV_CODE = "123456"
   const { migrate } = await import("drizzle-orm/bun-sql/migrator")
   await migrate(getDb(), { migrationsFolder: "./src/db/migrations" })
   const app = createApp()
@@ -38,6 +39,14 @@ beforeEach(async () => {
   await getDb().execute(sql`
     truncate table
       platform_idempotency_keys,
+      email_job_attempts,
+      email_jobs,
+      storage_uploads,
+      school_admin_password_resets,
+      school_admin_password_history,
+      school_admin_sessions,
+      school_admin_login_attempts,
+      school_admin_audit_logs,
       school_admin_accounts,
       school_commercial_terms,
       schools,
@@ -46,6 +55,7 @@ beforeEach(async () => {
       platform_admin_password_history,
       platform_admin_sessions,
       platform_admin_login_attempts,
+      platform_admin_school_action_verifications,
       platform_admin_users
     restart identity cascade
   `)
@@ -74,6 +84,35 @@ function csrfFrom(cookieHeader: string): string {
     .split("; ")
     .find((item) => item.startsWith("mmk_platform_csrf="))
   return part?.slice("mmk_platform_csrf=".length) ?? ""
+}
+
+async function schoolLifecycleVerification(
+  schoolId: string,
+  action: "suspend" | "archive",
+  cookie: string,
+) {
+  const requested = await authed(
+    `/v1/platform/schools/${schoolId}/lifecycle-verification/request`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action }),
+    },
+    cookie,
+  )
+  expect(requested.status).toBe(200)
+  const verified = await authed(
+    `/v1/platform/schools/${schoolId}/lifecycle-verification/verify`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action, code: "123456" }),
+    },
+    cookie,
+  )
+  expect(verified.status).toBe(200)
+  const body = (await verified.json()) as { verificationToken: string }
+  return body.verificationToken
 }
 
 async function login(nextEmail = email, nextPassword = password) {
@@ -341,9 +380,18 @@ test("school provisioning, listing, update, and lifecycle", async () => {
   )
   expect(updated.status).toBe(200)
 
+  const suspendToken = await schoolLifecycleVerification(
+    createdBody.school.id,
+    "suspend",
+    cookie,
+  )
   const suspended = await authed(
     `/v1/platform/schools/${createdBody.school.id}/suspend`,
-    { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ reason: "Billing hold" }) },
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reason: "Billing hold", verificationToken: suspendToken }),
+    },
     cookie,
   )
   expect(suspended.status).toBe(200)
@@ -353,9 +401,18 @@ test("school provisioning, listing, update, and lifecycle", async () => {
     cookie,
   )
   expect(activated.status).toBe(200)
+  const archiveToken = await schoolLifecycleVerification(
+    createdBody.school.id,
+    "archive",
+    cookie,
+  )
   const archived = await authed(
     `/v1/platform/schools/${createdBody.school.id}/archive`,
-    { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ reason: "Closed" }) },
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reason: "Closed", verificationToken: archiveToken }),
+    },
     cookie,
   )
   expect(archived.status).toBe(200)

@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation"
 
 import { PageHeader } from "@/components/page-header"
+import { StatusBadge } from "@/components/status-badge"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { BrandingPanel } from "@/features/schools/branding-panel"
 import { SchoolActions } from "@/features/schools/school-actions"
 import { ServerApiError, serverApi } from "@/lib/server-api"
 import type { SchoolDetail } from "@/types/platform"
@@ -39,16 +41,17 @@ export default async function SchoolDetailPage({
         description={`${school.schoolCode} · Tenant ${school.tenantKey}`}
         crumbs={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "Schools", href: "/schools" },
+          { label: "All schools", href: "/schools" },
           { label: school.name },
         ]}
       />
       <SchoolActions school={school} />
+      <BrandingPanel schoolId={school.id} />
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle>Overview</CardTitle></CardHeader>
           <CardContent className="flex flex-col gap-2 text-sm">
-            <p>Status: <Badge variant="secondary">{school.status}</Badge></p>
+            <p>Status: <StatusBadge value={school.status} /></p>
             <p>Provisioning: {school.provisioningStatus}</p>
             <p>Created {formatDate(school.createdAt)}</p>
             {school.archiveReason ? <p>Archive reason: {school.archiveReason}</p> : null}
@@ -94,7 +97,7 @@ export default async function SchoolDetailPage({
             <p>Rate {school.commercial.perStudentRate} {school.commercial.currency}</p>
             <p>{school.commercial.subscriptionStart} to {school.commercial.subscriptionEnd}</p>
             <p>Student limit: {school.commercial.studentLimit ?? "Not set"}</p>
-            <p>Status: {school.commercial.status}</p>
+            <p>Status: <StatusBadge value={school.commercial.status} /></p>
             <p>{school.commercial.notes || "No commercial notes"}</p>
           </CardContent>
         </Card>

@@ -48,9 +48,11 @@ export async function getDashboard() {
     .orderBy(desc(platformAdminAuditLogs.createdAt))
     .limit(8)
 
-  const [postgres, storage] = await Promise.all([
+  const { pingQueue } = await import("../../../queue/email-queue")
+  const [postgres, storage, queueUp] = await Promise.all([
     checkDatabase(),
     createStorageProvider(env).checkAvailability(),
+    pingQueue(),
   ])
 
   return {
@@ -77,7 +79,7 @@ export async function getDashboard() {
     health: {
       postgres: postgres ? "up" : "down",
       storage: storage ? "up" : "down",
-      queue: "not_configured",
+      queue: queueUp ? "up" : "down",
     },
   }
 }
